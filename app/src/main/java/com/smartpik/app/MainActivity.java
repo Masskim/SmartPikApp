@@ -1,32 +1,46 @@
 package com.smartpik.app;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 
-import android.content.Intent;
+
 import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
+import android.view.TextureView;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
-    private static final int CAMERA_REQUEST = 1888;
-    ImageView imageView;
 
+    private int REQUEST_CODE_PERMISSION = 101;
+    private String[] REQUIRED_PERMISSION = new String[]{"android.permission.CAMERA", "android.permission.WRITE_EXTERNAL_STORAGE"};
 
-    protected void onCreate(Bundle savedInstanceState) {
+    TextureView textureView;
+
+    @Override
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
 
-        imageView = (ImageView) this.findViewById(R.id.imageView1);
-        Button photoButton = (Button) this.findViewById(R.id.button1);
+        getSupportActionBar().hide();
+        textureView = (TextureView) findViewById(R.id.view_finder);
 
-        photoButton.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                Intent cameraIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
-                startActivityForResult(cameraIntent, CAMERA_REQUEST);
-                //test
-            }
-        });
+        if (allPermissionGranted()) {
+            startCamera();
+        }
+        else{
+            ActivityCompat.requestPermissions(this,REQUIRED_PERMISSION,REQUEST_CODE_PERMISSION);
+        }
     }
+
+    private void startCamera() {
+    }
+
+    private boolean allPermissionGranted() {
+        for(String permission: REQUIRED_PERMISSION){}
+    }
+
+
 }
