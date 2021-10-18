@@ -3,10 +3,12 @@ package com.smartpik.app;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
 
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.TextureView;
 import android.widget.ImageView;
@@ -39,7 +41,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean allPermissionGranted() {
-        for(String permission: REQUIRED_PERMISSION){}
+        for(String permission: REQUIRED_PERMISSION){
+            if(ContextCompat.checkSelfPermission(this,permission) != PackageManager.PERMISSION_GRANTED){
+                return false;
+            }
+        }
+
+        return true;
     }
 
 
