@@ -15,16 +15,16 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <ImageButton
+    <Button
         android:id="@+id/imgCapture"
         android:layout_width="72dp"
         android:layout_height="72dp"
         android:layout_margin="24dp"
-        app:srcCompat="@android:drawable/ic_menu_camera"
+        android:src="@android:drawable/ic_menu_camera"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
-        />
-
+        app:srcCompat="@android:drawable/ic_menu_camera"
+        tools:srcCompat="@android:drawable/ic_menu_camera" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

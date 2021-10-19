@@ -81,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
 
-                File file = new File("sdcard/photo/DCIM(0)/Camera/CameraX" + System.currentTimeMillis());
+                File file = new File("DCIM\\Camera" + System.currentTimeMillis());
                 imgCap.takePicture(file, new ImageCapture.OnImageSavedListener() {
                     @Override
                     public void onImageSaved(@NonNull File file) {
