@@ -28,7 +28,7 @@ public class MainActivity extends AppCompatActivity {
 
     private int REQUEST_CODE_PERMISSION = 101;
     private String[] REQUIRED_PERMISSION = new String[]{"android.permission.CAMERA", "android.permission.WRITE_EXTERNAL_STORAGE"};
-
+        //test
     TextureView textureView;
 
     @Override
