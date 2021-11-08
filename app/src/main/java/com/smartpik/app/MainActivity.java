@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat;
 import android.content.pm.PackageManager;
 import android.opengl.Matrix;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Rational;
 import android.util.Size;
 import android.view.Surface;
@@ -31,6 +32,11 @@ public class MainActivity extends AppCompatActivity {
         //test
     TextureView textureView;
 
+    public static String photographStorage =
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).toString()
+                    + File.separator + "SmartPik";
+    File file = new File(photographStorage);
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -41,10 +47,12 @@ public class MainActivity extends AppCompatActivity {
 
         if (allPermissionGranted()) {
             startCamera();
+            file.mkdir();
         }
         else{
             ActivityCompat.requestPermissions(this,REQUIRED_PERMISSION,REQUEST_CODE_PERMISSION);
         }
+
     }
 
     private void startCamera() {
@@ -81,7 +89,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
 
-                File file = new File("DCIM\\Camera" + System.currentTimeMillis());
+                File file = new File(photographStorage+ File.separator + "IMG_" + System.currentTimeMillis()+".jpg");
+
                 imgCap.takePicture(file, new ImageCapture.OnImageSavedListener() {
                     @Override
                     public void onImageSaved(@NonNull File file) {
@@ -91,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     public void onError(@NonNull ImageCapture.UseCaseError useCaseError, @NonNull String message, @Nullable Throwable cause) {
-                        String msg = "pic capture failed:" + message;
+                        String msg = "pic capture failed:" + message +"\npath : "+photographStorage;
                         Toast.makeText(getBaseContext(),msg,Toast.LENGTH_LONG).show();
 
                         if(cause != null){
