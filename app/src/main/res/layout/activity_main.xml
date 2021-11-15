@@ -15,6 +15,14 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
+    <TextView
+        android:id="@+id/image_view"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginTop="400dp"
+        android:gravity="center"
+        tools:ignore="MissingConstraints"/>
+
     <Button
         android:id="@+id/imgCapture"
         android:layout_width="72dp"
