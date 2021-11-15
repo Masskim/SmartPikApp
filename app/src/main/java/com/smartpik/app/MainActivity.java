@@ -31,7 +31,6 @@ public class MainActivity extends AppCompatActivity {
     private String[] REQUIRED_PERMISSION = new String[]{"android.permission.CAMERA", "android.permission.WRITE_EXTERNAL_STORAGE"};
         //test
     TextureView textureView;
-
     public static String photographStorage =
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).toString()
                     + File.separator + "SmartPik";
@@ -47,12 +46,10 @@ public class MainActivity extends AppCompatActivity {
 
         if (allPermissionGranted()) {
             startCamera();
-            file.mkdir();
         }
         else{
             ActivityCompat.requestPermissions(this,REQUIRED_PERMISSION,REQUEST_CODE_PERMISSION);
         }
-
     }
 
     private void startCamera() {
@@ -90,7 +87,6 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
 
                 File file = new File(photographStorage+ File.separator + "IMG_" + System.currentTimeMillis()+".jpg");
-
                 imgCap.takePicture(file, new ImageCapture.OnImageSavedListener() {
                     @Override
                     public void onImageSaved(@NonNull File file) {
@@ -100,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     public void onError(@NonNull ImageCapture.UseCaseError useCaseError, @NonNull String message, @Nullable Throwable cause) {
-                        String msg = "pic capture failed:" + message +"\npath : "+photographStorage;
+                        String msg = "pic capture failed:" + message;
                         Toast.makeText(getBaseContext(),msg,Toast.LENGTH_LONG).show();
 
                         if(cause != null){
