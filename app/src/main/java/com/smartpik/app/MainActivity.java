@@ -1,254 +1,194 @@
 package com.smartpik.app;
 
+
+import android.annotation.SuppressLint;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.PixelFormat;
+import android.graphics.PorterDuff;
+import android.media.Image;
+import android.os.Bundle;
+import android.util.DisplayMetrics;
+import android.util.Log;
+import android.util.Size;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+import android.widget.TextView;
+
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.camera.core.CameraX;
-import androidx.camera.core.ImageCapture;
-import androidx.camera.core.ImageCaptureConfig;
+import androidx.camera.core.Camera;
+import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.Preview;
-import androidx.camera.core.PreviewConfig;
-import androidx.core.app.ActivityCompat;
+import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
-import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Point;
-import android.graphics.Rect;
-import android.media.Image;
-import android.opengl.Matrix;
-import android.os.Build;
-import android.os.Bundle;
-import android.os.Environment;
-import android.util.Rational;
-import android.util.Size;
-import android.view.Surface;
-import android.view.TextureView;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.Toast;
+import androidx.lifecycle.LifecycleOwner;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.mlkit.vision.common.InputImage;
-import com.google.mlkit.vision.text.Text;
-import com.google.mlkit.vision.text.TextRecognition;
-import com.google.mlkit.vision.text.TextRecognizer;
-import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.firebase.ml.vision.FirebaseVision;
+import com.google.firebase.ml.vision.common.FirebaseVisionImage;
+import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata;
+import com.google.firebase.ml.vision.text.FirebaseVisionText;
+import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+public class MainActivity extends AppCompatActivity implements SurfaceHolder.Callback {
+    TextView textView;
+    PreviewView mCameraView;
+    SurfaceHolder holder;
+    SurfaceView surfaceView;
+    Canvas canvas;
+    Paint paint;
+    int cameraHeight, cameraWidth, xOffset, yOffset, boxWidth, boxHeight;
 
-public class MainActivity extends AppCompatActivity {
+    private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
+    private ExecutorService executor = Executors.newSingleThreadExecutor();
 
-    private int REQUEST_CODE_PERMISSION = 101;
-    private String[] REQUIRED_PERMISSION = new String[]{"android.permission.CAMERA", "android.permission.WRITE_EXTERNAL_STORAGE"};
-        //test
-    TextureView textureView;
-    public static String photographStorage =
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).toString()
-                    + File.separator + "SmartPik";
-    File file = new File(photographStorage);
+    /**
+     *Responsible for converting the rotation degrees from CameraX into the one compatible with Firebase ML
+     */
 
-    @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        getSupportActionBar().hide();
-        textureView = (TextureView) findViewById(R.id.view_finder);
-
-        if (allPermissionGranted()) {
-            startCamera();
-            file.mkdir();
+    private int degreesToFirebaseRotation(int degrees) {
+        switch (degrees) {
+            case 0:
+                return FirebaseVisionImageMetadata.ROTATION_0;
+            case 90:
+                return FirebaseVisionImageMetadata.ROTATION_90;
+            case 180:
+                return FirebaseVisionImageMetadata.ROTATION_180;
+            case 270:
+                return FirebaseVisionImageMetadata.ROTATION_270;
+            default:
+                throw new IllegalArgumentException(
+                        "Rotation must be 0, 90, 180, or 270.");
         }
-        else{
-            ActivityCompat.requestPermissions(this,REQUIRED_PERMISSION,REQUEST_CODE_PERMISSION);
-        }
-
     }
 
-    private void startCamera() {
-        CameraX.unbindAll();
 
-        Rational aspectRatio = new Rational(textureView.getWidth(),textureView.getHeight());
-        Size screen = new Size(textureView.getWidth(),textureView.getHeight());
+    /**
+     * Starting Camera
+     */
+    void startCamera(){
+        mCameraView = findViewById(R.id.previewView);
 
-        PreviewConfig pConfig = new PreviewConfig.Builder().setTargetAspectRatio(aspectRatio).setTargetResolution(screen).build();
-        Preview preview = new Preview(pConfig);
+        cameraProviderFuture = ProcessCameraProvider.getInstance(this);
 
-        preview.setOnPreviewOutputUpdateListener(
-                new Preview.OnPreviewOutputUpdateListener() {
-                    @Override
-                    public void onUpdated(Preview.PreviewOutput output) {
-                        ViewGroup parent = (ViewGroup) textureView.getParent();
-                        parent.removeView(textureView);
-                        parent.addView(textureView);
-
-                        textureView.setSurfaceTexture(output.getSurfaceTexture());
-
-
-                    }
-
-                }
-        );
-
-        ImageCaptureConfig imageCaptureConfig = new ImageCaptureConfig.Builder().setCaptureMode(ImageCapture.CaptureMode.MIN_LATENCY).
-                setTargetRotation(getWindowManager().getDefaultDisplay().getRotation()).build();
-
-        final ImageCapture imgCap = new ImageCapture(imageCaptureConfig);
-
-        findViewById(R.id.imgCapture).setOnClickListener(new View.OnClickListener() {
-            @RequiresApi(api = Build.VERSION_CODES.O)
+        cameraProviderFuture.addListener(new Runnable() {
             @Override
-            public void onClick(View view) {
-
-                File file = new File(photographStorage+ File.separator + "IMG_" + System.currentTimeMillis()+".jpg");
-
-
-                imgCap.takePicture(file, new ImageCapture.OnImageSavedListener() {
-
-                    byte[] readFileToByteArray(File file){
-                        FileInputStream fis = null;
-                        // Creating a byte array using the length of the file
-                        // file.length returns long which is cast to int
-                        byte[] bArray = new byte[(int) file.length()];
-                        try{
-                            fis = new FileInputStream(file);
-                            fis.read(bArray);
-                            fis.close();
-                        }catch(IOException ioExp){
-                            ioExp.printStackTrace();
-                        }
-                        return bArray;
-                    }
-
-
-
-                    InputImage image = InputImage.fromByteArray(
-                            readFileToByteArray(file),
-                            /* image width */480,
-                            /* image height */360,
-                            0,
-                            InputImage.IMAGE_FORMAT_NV21 // or IMAGE_FORMAT_YV12
-                    );
-
-                    TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
-
-                    // [START run_detector]
-                    Task<Text> result =
-                            recognizer.process(image)
-                                    .addOnSuccessListener(new OnSuccessListener<Text>() {
-                                        @Override
-                                        public void onSuccess(Text visionText) {
-                                            // Task completed successfully
-                                            // [START_EXCLUDE]
-                                            // [START get_text]
-                                            for (Text.TextBlock block : visionText.getTextBlocks()) {
-                                                Rect boundingBox = block.getBoundingBox();
-                                                Point[] cornerPoints = block.getCornerPoints();
-                                                String text = block.getText();
-
-                                                for (Text.Line line: block.getLines()) {
-                                                    // ...
-                                                    for (Text.Element element: line.getElements()) {
-                                                        // ...
-                                                    }
-                                                }
-                                            }
-                                            // [END get_text]
-                                            // [END_EXCLUDE]
-                                        }
-                                    })
-                                    .addOnFailureListener(
-                                            new OnFailureListener() {
-                                                @Override
-                                                public void onFailure(@NonNull Exception e) {
-                                                    // Task failed with an exception
-                                                    // ...
-                                                }
-                                            });
-                    // [END run_detector]
-
-                    for(Text.TextBlock block : result.getTextBlocks()){
-                        String blockText = block.getText();
-                        Point[] blockCornerPoints = block.getCornerPoints();
-                        Rect blockFrame = block.getBoundingBox();
-                        for (Text.Line line : block.getLines()) {
-                            String lineText = line.getText();
-                            Point[] lineCornerPoints = line.getCornerPoints();
-                            Rect lineFrame = line.getBoundingBox();
-                            for (Text.Element element : line.getElements()) {
-                                String elementText = element.getText();
-                                Point[] elementCornerPoints = element.getCornerPoints();
-                                Rect elementFrame = element.getBoundingBox();
-                            }
-                        }
-                    }
-
-                    @Override
-                    public void onImageSaved(@NonNull File file) {
-                        String msg = "pic captured at "+file.getAbsolutePath();
-                        Toast.makeText(getBaseContext(),msg,Toast.LENGTH_LONG).show();
-
-                    }
-
-
-
-                    @Override
-                    public void onError(@NonNull ImageCapture.UseCaseError useCaseError, @NonNull String message, @Nullable Throwable cause) {
-                        String msg = "pic capture failed:" + message +"\npath : "+photographStorage;
-                        Toast.makeText(getBaseContext(),msg,Toast.LENGTH_LONG).show();
-
-                        if(cause != null){
-                            cause.printStackTrace();
-                        }
-                    }
-
-                });
+            public void run() {
+                try {
+                    ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+                    MainActivity.this.bindPreview(cameraProvider);
+                } catch (ExecutionException | InterruptedException e) {
+                    // No errors need to be handled for this Future.
+                    // This should never be reached.
+                }
             }
-        });
-
-        CameraX.bindToLifecycle(this,preview,imgCap);
+        }, ContextCompat.getMainExecutor(this));
     }
-    public void recognizeText(InputImage image) {
 
-        // [START get_detector_default]
-        TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
-        // [END get_detector_default]
+    /**
+     *
+     * Binding to camera
+     */
+    private void bindPreview(ProcessCameraProvider cameraProvider) {
+        Preview preview = new Preview.Builder()
+                .build();
 
-        // [START run_detector]
-        Task<Text> result =
-                recognizer.process(image)
-                        .addOnSuccessListener(new OnSuccessListener<Text>() {
+        CameraSelector cameraSelector = new CameraSelector.Builder()
+                .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+                .build();
+
+        preview.setSurfaceProvider(mCameraView.createSurfaceProvider());
+
+        //Image Analysis Function
+        //Set static size according to your device or write a dynamic function for it
+        ImageAnalysis imageAnalysis =
+                new ImageAnalysis.Builder()
+                        .setTargetResolution(new Size(720, 1488))
+                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                        .build();
+
+
+        imageAnalysis.setAnalyzer(executor, new ImageAnalysis.Analyzer() {
+            @SuppressLint({"UnsafeExperimentalUsageError", "UnsafeOptInUsageError"})
+            @Override
+            public void analyze(@NonNull ImageProxy image) {
+                //changing normal degrees into Firebase rotation
+                int rotationDegrees = degreesToFirebaseRotation(image.getImageInfo().getRotationDegrees());
+                if (image == null || image.getImage() == null) {
+                    return;
+                }
+                //Getting a FirebaseVisionImage object using the Image object and rotationDegrees
+                @SuppressLint("UnsafeOptInUsageError") final Image mediaImage = image.getImage();
+                FirebaseVisionImage images = FirebaseVisionImage.fromMediaImage(mediaImage, rotationDegrees);
+                //Getting bitmap from FirebaseVisionImage Object
+                Bitmap bmp=images.getBitmap();
+                //Getting the values for cropping
+                DisplayMetrics displaymetrics = new DisplayMetrics();
+                getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
+                int height = bmp.getHeight();
+                int width = bmp.getWidth();
+
+                int left, right, top, bottom, diameter;
+
+                diameter = width;
+                if (height < width) {
+                    diameter = height;
+                }
+
+                int offset = (int) (0.05 * diameter);
+                diameter -= offset;
+
+
+                left = width / 2 - diameter / 3;
+                top = height / 2 - diameter / 3;
+                right = width / 2 + diameter / 3;
+                bottom = height / 2 + diameter / 3;
+
+                xOffset = left;
+                yOffset = top;
+
+                //Creating new cropped bitmap
+                Bitmap bitmap = Bitmap.createBitmap(bmp, left, top, boxWidth, boxHeight);
+                //initializing FirebaseVisionTextRecognizer object
+                FirebaseVisionTextRecognizer detector = FirebaseVision.getInstance()
+                        .getOnDeviceTextRecognizer();
+                //Passing FirebaseVisionImage Object created from the cropped bitmap
+                Task<FirebaseVisionText> result =  detector.processImage(FirebaseVisionImage.fromBitmap(bitmap))
+                        .addOnSuccessListener(new OnSuccessListener<FirebaseVisionText>() {
                             @Override
-                            public void onSuccess(Text visionText) {
+                            public void onSuccess(FirebaseVisionText firebaseVisionText) {
                                 // Task completed successfully
-                                // [START_EXCLUDE]
-                                // [START get_text]
-                                for (Text.TextBlock block : visionText.getTextBlocks()) {
-                                    Rect boundingBox = block.getBoundingBox();
-                                    Point[] cornerPoints = block.getCornerPoints();
-                                    String text = block.getText();
+                                // ...
+                                textView=findViewById(R.id.text);
+                                //getting decoded text
+                                String text=firebaseVisionText.getText();
+                                //Setting the decoded text in the texttview
+                                textView.setText(text);
+                                //for getting blocks and line elements
+                                for (FirebaseVisionText.TextBlock block: firebaseVisionText.getTextBlocks()) {
+                                    String blockText = block.getText();
+                                    for (FirebaseVisionText.Line line: block.getLines()) {
+                                        String lineText = line.getText();
+                                        for (FirebaseVisionText.Element element: line.getElements()) {
+                                            String elementText = element.getText();
 
-                                    for (Text.Line line: block.getLines()) {
-                                        // ...
-                                        for (Text.Element element: line.getElements()) {
-                                            // ...
                                         }
                                     }
                                 }
-                                // [END get_text]
-                                // [END_EXCLUDE]
+                                image.close();
                             }
                         })
                         .addOnFailureListener(
@@ -257,63 +197,98 @@ public class MainActivity extends AppCompatActivity {
                                     public void onFailure(@NonNull Exception e) {
                                         // Task failed with an exception
                                         // ...
+                                        Log.e("Error",e.toString());
+                                        image.close();
                                     }
                                 });
-        // [END run_detector]
-    }
-
-    public void processTextBlock(Text result) {
-        // [START mlkit_process_text_block]
-        String resultText = result.getText();
-        for (Text.TextBlock block : result.getTextBlocks()) {
-            String blockText = block.getText();
-            Point[] blockCornerPoints = block.getCornerPoints();
-            Rect blockFrame = block.getBoundingBox();
-            for (Text.Line line : block.getLines()) {
-                String lineText = line.getText();
-                Point[] lineCornerPoints = line.getCornerPoints();
-                Rect lineFrame = line.getBoundingBox();
-                for (Text.Element element : line.getElements()) {
-                    String elementText = element.getText();
-                    Point[] elementCornerPoints = element.getCornerPoints();
-                    Rect elementFrame = element.getBoundingBox();
-                }
             }
-        }
-        // [END mlkit_process_text_block]
-    }
 
-    public TextRecognizer getTextRecognizer() {
-        // [START mlkit_local_doc_recognizer]
-        TextRecognizer detector = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
-        // [END mlkit_local_doc_recognizer]
 
-        return detector;
-    }
-
-    public void imageFromArray(byte[] byteArray) {
-        // [START image_from_array]
-        InputImage image = InputImage.fromByteArray(
-                byteArray,
-                /* image width */480,
-                /* image height */360,
-                0,
-                InputImage.IMAGE_FORMAT_NV21 // or IMAGE_FORMAT_YV12
-        );
-        // [END image_from_array]
+        });
+        Camera camera = cameraProvider.bindToLifecycle((LifecycleOwner)this, cameraSelector, imageAnalysis,preview);
     }
 
 
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
 
-    private boolean allPermissionGranted() {
-        for(String permission: REQUIRED_PERMISSION){
-            if(ContextCompat.checkSelfPermission(this,permission) != PackageManager.PERMISSION_GRANTED){
-                return false;
-            }
+        //Start Camera
+        startCamera();
+
+        //Create the bounding box
+        surfaceView = findViewById(R.id.overlay);
+        surfaceView.setZOrderOnTop(true);
+        holder = surfaceView.getHolder();
+        holder.setFormat(PixelFormat.TRANSPARENT);
+        holder.addCallback(this);
+
+    }
+
+    /**
+     *
+     * For drawing the rectangular box
+     */
+    private void DrawFocusRect(int color) {
+        DisplayMetrics displaymetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
+        int height = mCameraView.getHeight();
+        int width = mCameraView.getWidth();
+
+        //cameraHeight = height;
+        //cameraWidth = width;
+
+        int left, right, top, bottom, diameter;
+
+        diameter = width;
+        if (height < width) {
+            diameter = height;
         }
 
-        return true;
+        int offset = (int) (0.05 * diameter);
+        diameter -= offset;
+
+        canvas = holder.lockCanvas();
+        canvas.drawColor(0, PorterDuff.Mode.CLEAR);
+        //border's properties
+        paint = new Paint();
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setColor(color);
+        paint.setStrokeWidth(5);
+
+        left = width / 2 - diameter / 3;
+        top = height / 2 - diameter / 3;
+        right = width / 2 + diameter / 3;
+        bottom = height / 2 + diameter / 3;
+
+        xOffset = left;
+        yOffset = top;
+        boxHeight = bottom - top;
+        boxWidth = right - left;
+        //Changing the value of x in diameter/x will change the size of the box ; inversely proportionate to x
+        canvas.drawRect(left, top, right, bottom, paint);
+        holder.unlockCanvasAndPost(canvas);
     }
 
+    /**
+     * Callback functions for the surface Holder
+     */
+
+    @Override
+    public void surfaceCreated(SurfaceHolder holder) {
+
+    }
+
+    @Override
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+        //Drawing rectangle
+        DrawFocusRect(Color.parseColor("#b3dabb"));
+    }
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder holder) {
+
+    }
 
 }

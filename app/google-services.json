@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "174288270721",
+    "project_id": "ocrandroid-fb0b3",
+    "storage_bucket": "ocrandroid-fb0b3.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:174288270721:android:7f68a90969e078eab16480",
+        "android_client_info": {
+          "package_name": "com.example.test"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "174288270721-n0qjefsdk42q7lmu61huis4jfbdoe8of.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBkX9mNp1esVUEK-PiW-rzRjrxlOXvb3vo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "174288270721-n0qjefsdk42q7lmu61huis4jfbdoe8of.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:174288270721:android:4994001bcdb5ab41b16480",
+        "android_client_info": {
+          "package_name": "com.smartpik.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "174288270721-n0qjefsdk42q7lmu61huis4jfbdoe8of.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBkX9mNp1esVUEK-PiW-rzRjrxlOXvb3vo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "174288270721-n0qjefsdk42q7lmu61huis4jfbdoe8of.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
