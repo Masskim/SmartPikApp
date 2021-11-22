@@ -11,6 +11,7 @@ import android.util.Log;
 import android.util.SparseArray;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -28,7 +29,8 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private SurfaceView cameraView;
     private TextView txtView;
     private CameraSource cameraSource;
-    
+    private Button scanButton;
+
 
     @SuppressLint({"MissingPermission", "MissingSuperCall"})
     @Override
@@ -53,6 +55,10 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         setContentView(R.layout.activity_main);
         cameraView = findViewById(R.id.surface_view);
         txtView = findViewById(R.id.txtview);
+        scanButton = (Button)findViewById(R.id.scanner);
+
+
+
         TextRecognizer txtRecognizer = new TextRecognizer.Builder(getApplicationContext()).build();
         if (!txtRecognizer.isOperational()) {
             Log.e("Main Activity", "Detector dependencies are not yet available");
@@ -99,8 +105,16 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     @Override
     public void receiveDetections(Detector.Detections detections) {
+
         SparseArray items = detections.getDetectedItems();
         final StringBuilder strBuilder = new StringBuilder();
+
+        scanButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+            }
+        });
         for (int i = 0; i < items.size(); i++)
         {
             TextBlock item = (TextBlock)items.valueAt(i);
@@ -129,8 +143,15 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         txtView.post(new Runnable() {
             @Override
             public void run() {
-                txtView.setText(strBuilder.toString());
+                scanButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        txtView.setText(strBuilder.toString());
+                    }
+                });
+
             }
         });
+
     }
-   }
+}
