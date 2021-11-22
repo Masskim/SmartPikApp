@@ -11,6 +11,7 @@ import android.util.Log;
 import android.util.SparseArray;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -27,12 +28,11 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private SurfaceView cameraView;
     private TextView txtView;
     private CameraSource cameraSource;
+    
 
     @SuppressLint({"MissingPermission", "MissingSuperCall"})
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-
-        //requete pour avoir la permission pour acceder a la camera
         switch (requestCode) {
             case 1: {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -51,16 +51,12 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         cameraView = findViewById(R.id.surface_view);
         txtView = findViewById(R.id.txtview);
-
         TextRecognizer txtRecognizer = new TextRecognizer.Builder(getApplicationContext()).build();
         if (!txtRecognizer.isOperational()) {
             Log.e("Main Activity", "Detector dependencies are not yet available");
         } else {
-
-            //on associe 
             cameraSource = new CameraSource.Builder(getApplicationContext(), txtRecognizer)
                     .setFacing(CameraSource.CAMERA_FACING_BACK)
                     .setRequestedPreviewSize(1280, 1024)
