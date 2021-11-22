@@ -1,294 +1,140 @@
 package com.smartpik.app;
 
 
+
+import android.Manifest;
 import android.annotation.SuppressLint;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.PixelFormat;
-import android.graphics.PorterDuff;
-import android.media.Image;
+
+import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.util.DisplayMetrics;
 import android.util.Log;
-import android.util.Size;
+import android.util.SparseArray;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.camera.core.Camera;
-import androidx.camera.core.CameraSelector;
-import androidx.camera.core.ImageAnalysis;
-import androidx.camera.core.ImageProxy;
-import androidx.camera.core.Preview;
-import androidx.camera.lifecycle.ProcessCameraProvider;
-import androidx.camera.view.PreviewView;
-import androidx.core.content.ContextCompat;
-import androidx.lifecycle.LifecycleOwner;
+import androidx.core.app.ActivityCompat;
+import com.google.android.gms.vision.CameraSource;
+import com.google.android.gms.vision.Detector;
+import com.google.android.gms.vision.text.Text;
+import com.google.android.gms.vision.text.TextBlock;
+import com.google.android.gms.vision.text.TextRecognizer;
 
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.firebase.ml.vision.FirebaseVision;
-import com.google.firebase.ml.vision.common.FirebaseVisionImage;
-import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata;
-import com.google.firebase.ml.vision.text.FirebaseVisionText;
-import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+public class MainActivity extends AppCompatActivity implements SurfaceHolder.Callback, Detector.Processor {
+    private SurfaceView cameraView;
+    private TextView txtView;
+    private CameraSource cameraSource;
 
-public class MainActivity extends AppCompatActivity implements SurfaceHolder.Callback {
-    TextView textView;
-    PreviewView mCameraView;
-    SurfaceHolder holder;
-    SurfaceView surfaceView;
-    Canvas canvas;
-    Paint paint;
-    int cameraHeight, cameraWidth, xOffset, yOffset, boxWidth, boxHeight;
+    @SuppressLint({"MissingPermission", "MissingSuperCall"})
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
 
-    private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
-    private ExecutorService executor = Executors.newSingleThreadExecutor();
+        //requete pour avoir la permission pour acceder a la camera
+        switch (requestCode) {
+            case 1: {
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    try {
+                        cameraSource.start(cameraView.getHolder());
+                    } catch (Exception e) {
 
-    /**
-     *Responsible for converting the rotation degrees from CameraX into the one compatible with Firebase ML
-     */
-
-    private int degreesToFirebaseRotation(int degrees) {
-        switch (degrees) {
-            case 0:
-                return FirebaseVisionImageMetadata.ROTATION_0;
-            case 90:
-                return FirebaseVisionImageMetadata.ROTATION_90;
-            case 180:
-                return FirebaseVisionImageMetadata.ROTATION_180;
-            case 270:
-                return FirebaseVisionImageMetadata.ROTATION_270;
-            default:
-                throw new IllegalArgumentException(
-                        "Rotation must be 0, 90, 180, or 270.");
+                    }
+                }
+            }
+            break;
         }
     }
-
-
-    /**
-     * Starting Camera
-     */
-    void startCamera(){
-        mCameraView = findViewById(R.id.previewView);
-
-        cameraProviderFuture = ProcessCameraProvider.getInstance(this);
-
-        cameraProviderFuture.addListener(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
-                    MainActivity.this.bindPreview(cameraProvider);
-                } catch (ExecutionException | InterruptedException e) {
-                    // No errors need to be handled for this Future.
-                    // This should never be reached.
-                }
-            }
-        }, ContextCompat.getMainExecutor(this));
-    }
-
-    /**
-     *
-     * Binding to camera
-     */
-    private void bindPreview(ProcessCameraProvider cameraProvider) {
-        Preview preview = new Preview.Builder()
-                .build();
-
-        CameraSelector cameraSelector = new CameraSelector.Builder()
-                .requireLensFacing(CameraSelector.LENS_FACING_BACK)
-                .build();
-
-        preview.setSurfaceProvider(mCameraView.createSurfaceProvider());
-
-        //Image Analysis Function
-        //Set static size according to your device or write a dynamic function for it
-        ImageAnalysis imageAnalysis =
-                new ImageAnalysis.Builder()
-                        .setTargetResolution(new Size(720, 1488))
-                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                        .build();
-
-
-        imageAnalysis.setAnalyzer(executor, new ImageAnalysis.Analyzer() {
-            @SuppressLint({"UnsafeExperimentalUsageError", "UnsafeOptInUsageError"})
-            @Override
-            public void analyze(@NonNull ImageProxy image) {
-                //changing normal degrees into Firebase rotation
-                int rotationDegrees = degreesToFirebaseRotation(image.getImageInfo().getRotationDegrees());
-                if (image == null || image.getImage() == null) {
-                    return;
-                }
-                //Getting a FirebaseVisionImage object using the Image object and rotationDegrees
-                @SuppressLint("UnsafeOptInUsageError") final Image mediaImage = image.getImage();
-                FirebaseVisionImage images = FirebaseVisionImage.fromMediaImage(mediaImage, rotationDegrees);
-                //Getting bitmap from FirebaseVisionImage Object
-                Bitmap bmp=images.getBitmap();
-                //Getting the values for cropping
-                DisplayMetrics displaymetrics = new DisplayMetrics();
-                getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
-                int height = bmp.getHeight();
-                int width = bmp.getWidth();
-
-                int left, right, top, bottom, diameter;
-
-                diameter = width;
-                if (height < width) {
-                    diameter = height;
-                }
-
-                int offset = (int) (0.05 * diameter);
-                diameter -= offset;
-
-
-                left = width / 2 - diameter / 3;
-                top = height / 2 - diameter / 3;
-                right = width / 2 + diameter / 3;
-                bottom = height / 2 + diameter / 3;
-
-                xOffset = left;
-                yOffset = top;
-
-                //Creating new cropped bitmap
-                Bitmap bitmap = Bitmap.createBitmap(bmp, left, top, boxWidth, boxHeight);
-                //initializing FirebaseVisionTextRecognizer object
-                FirebaseVisionTextRecognizer detector = FirebaseVision.getInstance()
-                        .getOnDeviceTextRecognizer();
-                //Passing FirebaseVisionImage Object created from the cropped bitmap
-                Task<FirebaseVisionText> result =  detector.processImage(FirebaseVisionImage.fromBitmap(bitmap))
-                        .addOnSuccessListener(new OnSuccessListener<FirebaseVisionText>() {
-                            @Override
-                            public void onSuccess(FirebaseVisionText firebaseVisionText) {
-                                // Task completed successfully
-                                // ...
-                                textView=findViewById(R.id.text);
-                                //getting decoded text
-                                String text=firebaseVisionText.getText();
-                                //Setting the decoded text in the texttview
-                                textView.setText(text);
-                                //for getting blocks and line elements
-                                for (FirebaseVisionText.TextBlock block: firebaseVisionText.getTextBlocks()) {
-                                    String blockText = block.getText();
-                                    for (FirebaseVisionText.Line line: block.getLines()) {
-                                        String lineText = line.getText();
-                                        for (FirebaseVisionText.Element element: line.getElements()) {
-                                            String elementText = element.getText();
-
-                                        }
-                                    }
-                                }
-                                image.close();
-                            }
-                        })
-                        .addOnFailureListener(
-                                new OnFailureListener() {
-                                    @Override
-                                    public void onFailure(@NonNull Exception e) {
-                                        // Task failed with an exception
-                                        // ...
-                                        Log.e("Error",e.toString());
-                                        image.close();
-                                    }
-                                });
-            }
-
-
-        });
-        Camera camera = cameraProvider.bindToLifecycle((LifecycleOwner)this, cameraSelector, imageAnalysis,preview);
-    }
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //Start Camera
-        startCamera();
+        cameraView = findViewById(R.id.surface_view);
+        txtView = findViewById(R.id.txtview);
 
-        //Create the bounding box
-        surfaceView = findViewById(R.id.overlay);
-        surfaceView.setZOrderOnTop(true);
-        holder = surfaceView.getHolder();
-        holder.setFormat(PixelFormat.TRANSPARENT);
-        holder.addCallback(this);
+        TextRecognizer txtRecognizer = new TextRecognizer.Builder(getApplicationContext()).build();
+        if (!txtRecognizer.isOperational()) {
+            Log.e("Main Activity", "Detector dependencies are not yet available");
+        } else {
 
-    }
-
-    /**
-     *
-     * For drawing the rectangular box
-     */
-    private void DrawFocusRect(int color) {
-        DisplayMetrics displaymetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
-        int height = mCameraView.getHeight();
-        int width = mCameraView.getWidth();
-
-        //cameraHeight = height;
-        //cameraWidth = width;
-
-        int left, right, top, bottom, diameter;
-
-        diameter = width;
-        if (height < width) {
-            diameter = height;
+            //on associe 
+            cameraSource = new CameraSource.Builder(getApplicationContext(), txtRecognizer)
+                    .setFacing(CameraSource.CAMERA_FACING_BACK)
+                    .setRequestedPreviewSize(1280, 1024)
+                    .setRequestedFps(2.0f)
+                    .setAutoFocusEnabled(true)
+                    .build();
+            cameraView.getHolder().addCallback(this);
+            txtRecognizer.setProcessor(this);
         }
-
-        int offset = (int) (0.05 * diameter);
-        diameter -= offset;
-
-        canvas = holder.lockCanvas();
-        canvas.drawColor(0, PorterDuff.Mode.CLEAR);
-        //border's properties
-        paint = new Paint();
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setColor(color);
-        paint.setStrokeWidth(5);
-
-        left = width / 2 - diameter / 3;
-        top = height / 2 - diameter / 3;
-        right = width / 2 + diameter / 3;
-        bottom = height / 2 + diameter / 3;
-
-        xOffset = left;
-        yOffset = top;
-        boxHeight = bottom - top;
-        boxWidth = right - left;
-        //Changing the value of x in diameter/x will change the size of the box ; inversely proportionate to x
-        canvas.drawRect(left, top, right, bottom, paint);
-        holder.unlockCanvasAndPost(canvas);
     }
-
-    /**
-     * Callback functions for the surface Holder
-     */
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-
+        try {
+            if (ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA},1);
+                return;
+            }
+            cameraSource.start(cameraView.getHolder());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-        //Drawing rectangle
-        DrawFocusRect(Color.parseColor("#b3dabb"));
+
     }
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
+        cameraSource.stop();
+    }
+
+    @Override
+    public void release() {
 
     }
 
-}
+    @Override
+    public void receiveDetections(Detector.Detections detections) {
+        SparseArray items = detections.getDetectedItems();
+        final StringBuilder strBuilder = new StringBuilder();
+        for (int i = 0; i < items.size(); i++)
+        {
+            TextBlock item = (TextBlock)items.valueAt(i);
+            strBuilder.append(item.getValue());
+            strBuilder.append("/");
+            // The following Process is used to show how to use lines & elements as well
+            for (int j = 0; j < items.size(); j++) {
+                TextBlock textBlock = (TextBlock) items.valueAt(j);
+                strBuilder.append(textBlock.getValue());
+                strBuilder.append("/");
+                for (Text line : textBlock.getComponents()) {
+                    //extract scanned text lines here
+                    Log.v("lines", line.getValue());
+                    strBuilder.append(line.getValue());
+                    strBuilder.append("/");
+                    for (Text element : line.getComponents()) {
+                        //extract scanned text words here
+                        Log.v("element", element.getValue());
+                        strBuilder.append(element.getValue());
+                    }
+                }
+            }
+        }
+        Log.v("strBuilder.toString()", strBuilder.toString());
+
+        txtView.post(new Runnable() {
+            @Override
+            public void run() {
+                txtView.setText(strBuilder.toString());
+            }
+        });
+    }
+   }
