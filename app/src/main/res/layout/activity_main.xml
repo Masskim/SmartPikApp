@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
+
     <SurfaceView
         android:id="@+id/surface_view"
         android:layout_width="match_parent"
@@ -33,4 +34,16 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageButton
+        android:id="@+id/imageButton"
+        android:layout_width="533dp"
+        android:layout_height="507dp"
+        android:layout_marginTop="404dp"
+        android:background="@color/material_on_surface_disabled"
+        android:scaleX="0.2"
+        android:scaleY="0.2"
+        app:layout_constraintTop_toTopOf="@+id/surface_view"
+        app:srcCompat="@drawable/sans_titre"
+        tools:layout_editor_absoluteX="-61dp" />
 </androidx.constraintlayout.widget.ConstraintLayout>
