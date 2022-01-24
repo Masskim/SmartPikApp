@@ -6,25 +6,45 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <TextureView
-        android:id="@+id/view_finder"
+    <SurfaceView
+        android:id="@+id/surface_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        android:layout_height="match_parent" />
 
-    <Button
-        android:id="@+id/imgCapture"
-        android:layout_width="72dp"
-        android:layout_height="72dp"
-        android:layout_margin="24dp"
-        android:src="@android:drawable/ic_menu_camera"
-        app:layout_constraintBottom_toBottomOf="parent"
+    <TextView
+        android:id="@+id/txtview"
+        android:layout_width="344dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="176dp"
+        android:padding="5dp"
+        android:text="No Text"
+        android:textColor="@android:color/white"
+        android:textSize="20sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:srcCompat="@android:drawable/ic_menu_camera"
-        tools:srcCompat="@android:drawable/ic_menu_camera" />
+        app:layout_constraintTop_toTopOf="@+id/surface_view" />
 
+<!--    <Button-->
+<!--        android:id="@+id/scanner"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_marginBottom="56dp"-->
+<!--        android:text="scan"-->
+<!--        app:layout_constraintBottom_toBottomOf="parent"-->
+<!--        app:layout_constraintEnd_toEndOf="parent"-->
+<!--        app:layout_constraintHorizontal_bias="0.498"-->
+<!--        app:layout_constraintStart_toStartOf="parent" />-->
+
+    <ImageButton
+        android:id="@+id/scanner"
+        android:layout_width="533dp"
+        android:layout_height="507dp"
+        android:layout_marginTop="404dp"
+        android:background="@color/material_on_surface_disabled"
+        android:scaleX="0.2"
+        android:scaleY="0.2"
+        app:layout_constraintTop_toTopOf="@+id/surface_view"
+        app:srcCompat="@drawable/sans_titre"
+        tools:layout_editor_absoluteX="-61dp"
+        tools:ignore="MissingConstraints" />
 </androidx.constraintlayout.widget.ConstraintLayout>
