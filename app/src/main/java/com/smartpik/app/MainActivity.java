@@ -13,6 +13,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -29,7 +30,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private SurfaceView cameraView;
     private TextView txtView;
     private CameraSource cameraSource;
-    private Button scanButton;
+    private ImageButton scanButton;
 
 
     @SuppressLint({"MissingPermission", "MissingSuperCall"})
@@ -55,7 +56,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         setContentView(R.layout.activity_main);
         cameraView = findViewById(R.id.surface_view);
         txtView = findViewById(R.id.txtview);
-        scanButton = (Button)findViewById(R.id.scanner);
+        scanButton = (ImageButton)findViewById(R.id.scanner);
 
 
 
