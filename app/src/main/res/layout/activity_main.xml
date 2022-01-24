@@ -11,48 +11,39 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!--<Button
-        android:layout_width="172dp"
-        android:layout_height="56dp"
-        android:layout_marginBottom="192dp"
+    <TextView
+        android:id="@+id/txtview"
+        android:layout_width="344dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="176dp"
+        android:padding="5dp"
+        android:text="No Text"
+        android:textColor="@android:color/white"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/surface_view" />
+
+    <Button
+        android:id="@+id/scanner"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="56dp"
         android:text="scan"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.497"
-        app:layout_constraintStart_toStartOf="parent" />-->
-
-    <ScrollView
-        android:layout_width="318dp"
-        android:layout_height="499dp"
-        app:layout_constraintBottom_toTopOf="@+id/scanner"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="@+id/surface_view"
-        app:layout_constraintTop_toTopOf="@+id/surface_view">
-
-        <TextView
-            android:id="@+id/txtview"
-            android:layout_width="344dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="76dp"
-            android:padding="5dp"
-            android:textAlignment="center"
-            android:textColor="@android:color/white"
-            android:textSize="20sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.492"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/surface_view" />
-    </ScrollView>
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <ImageButton
-        android:id="@+id/scanner"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-
-        android:layout_marginBottom="60dp"
-        android:background="@drawable/logo_scan"
-        app:layout_constraintBottom_toBottomOf="@+id/surface_view"
-        app:layout_constraintEnd_toEndOf="@+id/surface_view"
-        app:layout_constraintHorizontal_bias="0.498"
-        app:layout_constraintStart_toStartOf="@+id/surface_view" />
+        android:id="@+id/imageButton"
+        android:layout_width="533dp"
+        android:layout_height="507dp"
+        android:layout_marginTop="404dp"
+        android:background="@color/material_on_surface_disabled"
+        android:scaleX="0.2"
+        android:scaleY="0.2"
+        app:layout_constraintTop_toTopOf="@+id/surface_view"
+        app:srcCompat="@drawable/sans_titre"
+        tools:layout_editor_absoluteX="-61dp" />
 </androidx.constraintlayout.widget.ConstraintLayout>
